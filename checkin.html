@@ -9,14 +9,19 @@
         input, button { padding: 12px; margin: 10px; width: 80%; border-radius: 8px; border: none; font-size: 16px; }
         button { background: #FFD700; color: #333; font-weight: bold; cursor: pointer; }
         #message { margin-top: 20px; font-weight: bold; }
+        #qrcode { width: 200px; height: 200px; margin: 0 auto; }
     </style>
+    <!-- 使用稳定可靠的二维码库 -->
     <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
 </head>
 <body>
     <div class="container">
         <h1>🎉 成果展抽奖签到 🎉</h1>
         <p>请扫码签到，即可参与抽奖活动</p>
-        <div class="qrcode" id="qrcode"></div>
+        <div class="qrcode">
+            <!-- 二维码将显示在这个canvas中 -->
+            <canvas id="qrcodeCanvas"></canvas>
+        </div>
         <p>或直接输入姓名：</p>
         <input type="text" id="name" placeholder="请输入您的姓名">
         <button onclick="signIn()">确认签到</button>
@@ -25,51 +30,121 @@
     </div>
     
     <script>
-        // 生成当前页面二维码（方便手机扫码）
-        const pageUrl = window.location.href;
-        QRCode.toCanvas(document.getElementById('qrcode'), pageUrl, { width: 200 });
+        // 生成当前页面二维码
+        function generateQRCode() {
+            // 获取当前页面URL
+            const pageUrl = window.location.href;
+            
+            // 使用 QRCode.js 生成二维码
+            QRCode.toCanvas(
+                document.getElementById('qrcodeCanvas'),
+                pageUrl,
+                {
+                    width: 180,
+                    margin: 2,
+                    color: {
+                        dark: '#000000',
+                        light: '#FFFFFF'
+                    }
+                },
+                function (error) {
+                    if (error) {
+                        console.error('生成二维码失败:', error);
+                        // 如果失败，显示备用方案
+                        document.getElementById('qrcodeCanvas').parentElement.innerHTML = 
+                            '<p style="color:red;">二维码生成失败<br>请直接访问本页面</p>' +
+                            '<p><small>网址: ' + pageUrl + '</small></p>';
+                    } else {
+                        console.log('二维码生成成功!');
+                    }
+                }
+            );
+        }
         
-        // 使用 Firebase 作为云端数据库（免费、实时）
-        const firebaseConfig = {
-            apiKey: "YOUR_API_KEY",
-            authDomain: "YOUR_PROJECT.firebaseapp.com",
-            projectId: "YOUR_PROJECT",
-            storageBucket: "YOUR_PROJECT.appspot.com",
-            messagingSenderId: "YOUR_SENDER_ID",
-            appId: "YOUR_APP_ID"
+        // 页面加载时生成二维码
+        window.onload = function() {
+            generateQRCode();
+            
+            // 检查QRCode库是否加载成功
+            if (typeof QRCode === 'undefined') {
+                console.error('QRCode库未加载！');
+                // 使用备用方案
+                useBackupQRCode();
+            }
         };
         
-        // 初始化 Firebase（您需要先创建 Firebase 项目）
-        // firebase.initializeApp(firebaseConfig);
-        // const db = firebase.firestore();
+        // 备用方案：使用在线API生成二维码
+        function useBackupQRCode() {
+            const pageUrl = window.location.href;
+            const qrContainer = document.getElementById('qrcodeCanvas').parentElement;
+            
+            // 使用在线二维码生成API
+            const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(pageUrl)}`;
+            
+            qrContainer.innerHTML = `<img src="${qrUrl}" alt="签到二维码" style="width:180px;height:180px;">`;
+        }
         
-        // 为简化演示，这里使用 localStorage + 定时同步模拟云端
+        // 签到功能
         async function signIn() {
             const name = document.getElementById('name').value.trim();
-            if (!name) { alert('请输入姓名'); return; }
+            if (!name) { 
+                alert('请输入姓名'); 
+                return; 
+            }
+            
+            // 显示处理中
+            document.getElementById('message').innerHTML = '处理中...';
+            document.getElementById('message').style.color = 'white';
             
             // 1. 本地存储签到记录
             let signedUsers = JSON.parse(localStorage.getItem('signedUsers') || '[]');
             if (signedUsers.includes(name)) {
-                document.getElementById('message').innerHTML = '您已签到，无需重复操作！';
+                document.getElementById('message').innerHTML = '⚠️ 您已签到，无需重复操作！';
+                document.getElementById('message').style.color = '#FFD700';
                 return;
             }
+            
+            // 添加新用户
             signedUsers.push(name);
             localStorage.setItem('signedUsers', JSON.stringify(signedUsers));
             
-            // 2. 同步到抽奖池（实际使用时应替换为 Firebase 写入）
+            // 2. 同步到抽奖池
             let lotteryPool = JSON.parse(localStorage.getItem('lotteryPool') || '[]');
             if (!lotteryPool.find(u => u.name === name)) {
-                lotteryPool.push({ name, id: Date.now(), isWon: false });
+                lotteryPool.push({ 
+                    name: name, 
+                    id: Date.now(), 
+                    isWon: false,
+                    signTime: new Date().toLocaleString()
+                });
                 localStorage.setItem('lotteryPool', JSON.stringify(lotteryPool));
             }
             
+            // 3. 显示成功信息
             document.getElementById('message').innerHTML = `✅ ${name}，签到成功！祝您好运！`;
+            document.getElementById('message').style.color = '#90EE90';
             document.getElementById('name').value = '';
             
-            // 3. 模拟同步到云端（实际应使用 Firebase 的 setDoc 或 updateDoc）
-            console.log('数据已同步到抽奖池:', lotteryPool);
+            // 4. 模拟云端同步
+            console.log('签到成功:', name);
+            console.log('当前抽奖池:', lotteryPool);
+            
+            // 5. 可选：播放成功音效
+            try {
+                const audio = new Audio('https://assets.mixkit.co/sfx/preview/mixkit-correct-answer-tone-2870.mp3');
+                audio.volume = 0.3;
+                audio.play();
+            } catch (e) {
+                // 忽略音效错误
+            }
         }
+        
+        // 监听回车键
+        document.getElementById('name').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                signIn();
+            }
+        });
     </script>
 </body>
 </html>
