@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>成果展签到 - 参与抽奖</title>
+    <style>
+        body { font-family: 'Microsoft YaHei', sans-serif; text-align: center; padding: 40px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; }
+        .container { max-width: 500px; margin: 0 auto; background: rgba(255,255,255,0.1); padding: 30px; border-radius: 20px; backdrop-filter: blur(10px); }
+        .qrcode { margin: 30px 0; background: white; padding: 15px; display: inline-block; border-radius: 10px; }
+        input, button { padding: 12px; margin: 10px; width: 80%; border-radius: 8px; border: none; font-size: 16px; }
+        button { background: #FFD700; color: #333; font-weight: bold; cursor: pointer; }
+        #message { margin-top: 20px; font-weight: bold; }
+    </style>
+    <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
+</head>
+<body>
+    <div class="container">
+        <h1>🎉 成果展抽奖签到 🎉</h1>
+        <p>请扫码签到，即可参与抽奖活动</p>
+        <div class="qrcode" id="qrcode"></div>
+        <p>或直接输入姓名：</p>
+        <input type="text" id="name" placeholder="请输入您的姓名">
+        <button onclick="signIn()">确认签到</button>
+        <div id="message"></div>
+        <p style="font-size: 14px; margin-top: 30px;">签到成功即进入抽奖池，每人仅有一次中奖机会</p>
+    </div>
+    
+    <script>
+        // 生成当前页面二维码（方便手机扫码）
+        const pageUrl = window.location.href;
+        QRCode.toCanvas(document.getElementById('qrcode'), pageUrl, { width: 200 });
+        
+        // 使用 Firebase 作为云端数据库（免费、实时）
+        const firebaseConfig = {
+            apiKey: "YOUR_API_KEY",
+            authDomain: "YOUR_PROJECT.firebaseapp.com",
+            projectId: "YOUR_PROJECT",
+            storageBucket: "YOUR_PROJECT.appspot.com",
+            messagingSenderId: "YOUR_SENDER_ID",
+            appId: "YOUR_APP_ID"
+        };
+        
+        // 初始化 Firebase（您需要先创建 Firebase 项目）
+        // firebase.initializeApp(firebaseConfig);
+        // const db = firebase.firestore();
+        
+        // 为简化演示，这里使用 localStorage + 定时同步模拟云端
+        async function signIn() {
+            const name = document.getElementById('name').value.trim();
+            if (!name) { alert('请输入姓名'); return; }
+            
+            // 1. 本地存储签到记录
+            let signedUsers = JSON.parse(localStorage.getItem('signedUsers') || '[]');
+            if (signedUsers.includes(name)) {
+                document.getElementById('message').innerHTML = '您已签到，无需重复操作！';
+                return;
+            }
+            signedUsers.push(name);
+            localStorage.setItem('signedUsers', JSON.stringify(signedUsers));
+            
+            // 2. 同步到抽奖池（实际使用时应替换为 Firebase 写入）
+            let lotteryPool = JSON.parse(localStorage.getItem('lotteryPool') || '[]');
+            if (!lotteryPool.find(u => u.name === name)) {
+                lotteryPool.push({ name, id: Date.now(), isWon: false });
+                localStorage.setItem('lotteryPool', JSON.stringify(lotteryPool));
+            }
+            
+            document.getElementById('message').innerHTML = `✅ ${name}，签到成功！祝您好运！`;
+            document.getElementById('name').value = '';
+            
+            // 3. 模拟同步到云端（实际应使用 Firebase 的 setDoc 或 updateDoc）
+            console.log('数据已同步到抽奖池:', lotteryPool);
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>成果展幸运抽奖</title>
+    <style>
+        body { font-family: 'Microsoft YaHei', sans-serif; text-align: center; margin: 0; padding: 0; background: linear-gradient(45deg, #1a2a6c, #b21f1f, #fdbb2d); background-size: 400% 400%; animation: gradient 15s ease infinite; color: white; height: 100vh; display: flex; justify-content: center; align-items: center; }
+        @keyframes gradient { 0% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } 100% { background-position: 0% 50%; } }
+        
+        .lottery-container { background: rgba(0, 0, 0, 0.7); padding: 40px 60px; border-radius: 25px; box-shadow: 0 15px 35px rgba(0,0,0,0.5); width: 80%; max-width: 900px; }
+        h1 { font-size: 3.5rem; margin-bottom: 10px; text-shadow: 0 5px 15px rgba(0,0,0,0.3); }
+        h1 span { color: #FFD700; }
+        
+        .winner-display { min-height: 280px; background: rgba(255, 255, 255, 0.1); border-radius: 15px; display: flex; justify-content: center; align-items: center; margin: 30px 0; font-size: 2rem; font-weight: bold; padding: 20px; border: 3px dashed rgba(255, 215, 0, 0.5); }
+        
+        .winner-name { font-size: 4rem; color: #FFD700; text-shadow: 0 0 30px rgba(255, 215, 0, 0.8); animation: glow 1s infinite alternate; }
+        @keyframes glow { from { text-shadow: 0 0 20px rgba(255, 215, 0, 0.7); } to { text-shadow: 0 0 30px rgba(255, 215, 0, 1), 0 0 40px rgba(255, 215, 0, 0.8); } }
+        
+        .controls { margin: 30px 0; }
+        #drawBtn { background: linear-gradient(45deg, #FF416C, #FF4B2B); color: white; border: none; padding: 20px 50px; font-size: 1.8rem; border-radius: 50px; cursor: pointer; font-weight: bold; box-shadow: 0 10px 20px rgba(255, 65, 108, 0.4); transition: all 0.3s; margin: 15px; }
+        #drawBtn:hover { transform: translateY(-5px); box-shadow: 0 15px 25px rgba(255, 65, 108, 0.6); }
+        #drawBtn:disabled { background: #666; cursor: not-allowed; }
+        
+        .winners-list { max-height: 200px; overflow-y: auto; text-align: left; background: rgba(255,255,255,0.05); padding: 15px; border-radius: 10px; margin-top: 20px; }
+        .winners-list h3 { margin-top: 0; color: #FFD700; }
+        .winners-list div { padding: 8px; border-bottom: 1px solid rgba(255,255,255,0.1); }
+        
+        .stats { display: flex; justify-content: space-around; margin-top: 25px; font-size: 1.2rem; }
+        .stat-box { background: rgba(255,255,255,0.1); padding: 15px; border-radius: 10px; min-width: 150px; }
+    </style>
+</head>
+<body>
+    <div class="lottery-container">
+        <h1>🎁 <span>幸运大抽奖</span> 🎁</h1>
+        <p style="font-size: 1.2rem;">仅限已签到人员参与，每人仅可中奖一次</p>
+        
+        <div class="winner-display">
+            <div id="winnerArea">点击下方按钮开始抽奖</div>
+        </div>
+        
+        <div class="controls">
+            <button id="drawBtn" onclick="drawWinner()">✨ 抽取幸运儿 ✨</button>
+            <button onclick="resetWinners()" style="background: #444; color: white; padding: 15px 30px; border-radius: 50px;">🔄 重置中奖记录</button>
+        </div>
+        
+        <div class="stats">
+            <div class="stat-box">已签到：<span id="signedCount">0</span>人</div>
+            <div class="stat-box">待抽奖：<span id="poolCount">0</span>人</div>
+            <div class="stat-box">已中奖：<span id="wonCount">0</span>人</div>
+        </div>
+        
+        <div class="winners-list">
+            <h3>🎉 中奖名单 🎉</h3>
+            <div id="winnersList"></div>
+        </div>
+    </div>
+    
+    <script>
+        // 初始化数据
+        let lotteryPool = [];
+        let winners = [];
+        
+        // 页面加载时获取数据
+        function loadData() {
+            // 从 localStorage 读取（实际应替换为 Firebase 监听）
+            lotteryPool = JSON.parse(localStorage.getItem('lotteryPool') || '[]');
+            winners = JSON.parse(localStorage.getItem('winners') || '[]');
+            
+            updateDisplay();
+            updateStats();
+        }
+        
+        // 抽取获奖者
+        function drawWinner() {
+            const btn = document.getElementById('drawBtn');
+            btn.disabled = true;
+            
+            // 筛选未中奖者
+            const availableUsers = lotteryPool.filter(user => !user.isWon);
+            if (availableUsers.length === 0) {
+                document.getElementById('winnerArea').innerHTML = '⚠️ 所有签到者均已获奖！';
+                return;
+            }
+            
+            // 抽奖动画效果
+            let counter = 0;
+            const interval = setInterval(() => {
+                const randomIndex = Math.floor(Math.random() * availableUsers.length);
+                document.getElementById('winnerArea').innerHTML = 
+                    `<div class="winner-name">${availableUsers[randomIndex].name}</div>`;
+                counter++;
+                if (counter > 30) { // 动画持续约1.5秒
+                    clearInterval(interval);
+                    
+                    // 确定最终获奖者
+                    const winnerIndex = Math.floor(Math.random() * availableUsers.length);
+                    const winner = availableUsers[winnerIndex];
+                    
+                    // 更新状态
+                    winner.isWon = true;
+                    winner.wonTime = new Date().toLocaleTimeString();
+                    winners.push(winner);
+                    
+                    // 保存数据
+                    localStorage.setItem('lotteryPool', JSON.stringify(lotteryPool));
+                    localStorage.setItem('winners', JSON.stringify(winners));
+                    
+                    // 显示最终结果
+                    document.getElementById('winnerArea').innerHTML = `
+                        <div>
+                            <div class="winner-name">${winner.name}</div>
+                            <div style="font-size: 1.5rem; margin-top: 20px;">🎊 恭喜中奖！ 🎊</div>
+                        </div>
+                    `;
+                    
+                    updateDisplay();
+                    updateStats();
+                    btn.disabled = false;
+                    
+                    // 播放音效（可选）
+                    const audio = new Audio('https://assets.mixkit.co/sfx/preview/mixkit-winning-chimes-2015.mp3');
+                    audio.volume = 0.3;
+                    audio.play().catch(e => console.log("音频播放被阻止"));
+                }
+            }, 50);
+        }
+        
+        // 更新显示
+        function updateDisplay() {
+            const listEl = document.getElementById('winnersList');
+            listEl.innerHTML = winners.map((w, i) => 
+                `<div>${i+1}. ${w.name} <span style="float:right; color:#aaa;">${w.wonTime || ''}</span></div>`
+            ).join('');
+        }
+        
+        // 更新统计
+        function updateStats() {
+            const signedCount = lotteryPool.length;
+            const wonCount = winners.length;
+            const poolCount = signedCount - wonCount;
+            
+            document.getElementById('signedCount').textContent = signedCount;
+            document.getElementById('poolCount').textContent = poolCount;
+            document.getElementById('wonCount').textContent = wonCount;
+        }
+        
+        // 重置中奖记录（管理员功能）
+        function resetWinners() {
+            if (confirm('确定要清空所有中奖记录吗？此操作不可撤销！')) {
+                lotteryPool.forEach(user => user.isWon = false);
+                winners = [];
+                localStorage.setItem('lotteryPool', JSON.stringify(lotteryPool));
+                localStorage.setItem('winners', JSON.stringify(winners));
+                loadData();
+                document.getElementById('winnerArea').innerHTML = '中奖记录已重置，点击按钮开始抽奖';
+            }
+        }
+        
+        // 定时同步数据（模拟云端实时同步）
+        setInterval(loadData, 2000);
+        
+        // 页面加载
+        window.onload = loadData;
+    </script>
+</body>
+</html>
