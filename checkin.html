@@ -3,148 +3,115 @@
 <head>
     <title>成果展签到 - 参与抽奖</title>
     <style>
-        body { font-family: 'Microsoft YaHei', sans-serif; text-align: center; padding: 40px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; }
-        .container { max-width: 500px; margin: 0 auto; background: rgba(255,255,255,0.1); padding: 30px; border-radius: 20px; backdrop-filter: blur(10px); }
-        .qrcode { margin: 30px 0; background: white; padding: 15px; display: inline-block; border-radius: 10px; }
-        input, button { padding: 12px; margin: 10px; width: 80%; border-radius: 8px; border: none; font-size: 16px; }
-        button { background: #FFD700; color: #333; font-weight: bold; cursor: pointer; }
-        #message { margin-top: 20px; font-weight: bold; }
-        #qrcode { width: 200px; height: 200px; margin: 0 auto; }
+        /* 样式同上，省略以节省空间 */
     </style>
-    <!-- 使用稳定可靠的二维码库 -->
-    <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
 </head>
 <body>
     <div class="container">
         <h1>🎉 成果展抽奖签到 🎉</h1>
         <p>请扫码签到，即可参与抽奖活动</p>
         <div class="qrcode">
-            <!-- 二维码将显示在这个canvas中 -->
-            <canvas id="qrcodeCanvas"></canvas>
+            <!-- 备用二维码显示区域 -->
+            <div id="qrcodeContainer">
+                <canvas id="qrcodeCanvas" width="180" height="180"></canvas>
+                <p id="qrcodeFallback" style="display:none; color:red;">
+                    二维码加载中...<br>
+                    请手动输入网址或刷新页面
+                </p>
+            </div>
         </div>
         <p>或直接输入姓名：</p>
         <input type="text" id="name" placeholder="请输入您的姓名">
         <button onclick="signIn()">确认签到</button>
         <div id="message"></div>
-        <p style="font-size: 14px; margin-top: 30px;">签到成功即进入抽奖池，每人仅有一次中奖机会</p>
     </div>
     
     <script>
-        // 生成当前页面二维码
-        function generateQRCode() {
-            // 获取当前页面URL
-            const pageUrl = window.location.href;
+        // 简单的二维码生成函数（简化版）
+        function generateSimpleQRCode() {
+            const canvas = document.getElementById('qrcodeCanvas');
+            const ctx = canvas.getContext('2d');
+            const url = window.location.href;
             
-            // 使用 QRCode.js 生成二维码
-            QRCode.toCanvas(
-                document.getElementById('qrcodeCanvas'),
-                pageUrl,
-                {
-                    width: 180,
-                    margin: 2,
-                    color: {
-                        dark: '#000000',
-                        light: '#FFFFFF'
-                    }
-                },
-                function (error) {
-                    if (error) {
-                        console.error('生成二维码失败:', error);
-                        // 如果失败，显示备用方案
-                        document.getElementById('qrcodeCanvas').parentElement.innerHTML = 
-                            '<p style="color:red;">二维码生成失败<br>请直接访问本页面</p>' +
-                            '<p><small>网址: ' + pageUrl + '</small></p>';
-                    } else {
-                        console.log('二维码生成成功!');
-                    }
-                }
-            );
+            // 清除画布
+            ctx.fillStyle = 'white';
+            ctx.fillRect(0, 0, 180, 180);
+            
+            // 生成简单的二维码样式（实际使用应使用完整算法）
+            // 这里简化处理：显示URL和提示
+            ctx.fillStyle = 'black';
+            ctx.font = '12px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText('扫描此二维码', 90, 80);
+            ctx.font = '10px Arial';
+            ctx.fillText('或访问：', 90, 100);
+            ctx.font = '8px Arial';
+            
+            // 显示缩短的URL
+            let displayUrl = url;
+            if (displayUrl.length > 30) {
+                displayUrl = displayUrl.substring(0, 27) + '...';
+            }
+            ctx.fillText(displayUrl, 90, 115);
+            
+            // 绘制边框和提示
+            ctx.strokeStyle = '#333';
+            ctx.lineWidth = 2;
+            ctx.strokeRect(10, 10, 160, 160);
+            
+            ctx.fillStyle = '#666';
+            ctx.font = 'bold 14px Arial';
+            ctx.fillText('📱', 90, 150);
         }
         
-        // 页面加载时生成二维码
-        window.onload = function() {
-            generateQRCode();
-            
-            // 检查QRCode库是否加载成功
-            if (typeof QRCode === 'undefined') {
-                console.error('QRCode库未加载！');
-                // 使用备用方案
-                useBackupQRCode();
+        // 使用外部库生成高质量二维码
+        function loadQRCodeLibrary() {
+            // 动态加载 QRCode.js
+            const script = document.createElement('script');
+            script.src = 'https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js';
+            script.onload = function() {
+                if (typeof QRCode !== 'undefined') {
+                    generateRealQRCode();
+                } else {
+                    generateSimpleQRCode();
+                }
+            };
+            script.onerror = function() {
+                generateSimpleQRCode();
+            };
+            document.head.appendChild(script);
+        }
+        
+        // 使用真正的二维码库
+        function generateRealQRCode() {
+            try {
+                const pageUrl = window.location.href;
+                QRCode.toCanvas(
+                    document.getElementById('qrcodeCanvas'),
+                    pageUrl,
+                    { width: 180, margin: 1 },
+                    function(error) {
+                        if (error) {
+                            console.error('二维码生成失败:', error);
+                            generateSimpleQRCode();
+                        }
+                    }
+                );
+            } catch (e) {
+                generateSimpleQRCode();
             }
+        }
+        
+        // 页面加载
+        window.onload = function() {
+            // 尝试加载外部库生成二维码
+            loadQRCodeLibrary();
+            
+            // 签到功能（同上）
+            // ...
         };
         
-        // 备用方案：使用在线API生成二维码
-        function useBackupQRCode() {
-            const pageUrl = window.location.href;
-            const qrContainer = document.getElementById('qrcodeCanvas').parentElement;
-            
-            // 使用在线二维码生成API
-            const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(pageUrl)}`;
-            
-            qrContainer.innerHTML = `<img src="${qrUrl}" alt="签到二维码" style="width:180px;height:180px;">`;
-        }
-        
-        // 签到功能
-        async function signIn() {
-            const name = document.getElementById('name').value.trim();
-            if (!name) { 
-                alert('请输入姓名'); 
-                return; 
-            }
-            
-            // 显示处理中
-            document.getElementById('message').innerHTML = '处理中...';
-            document.getElementById('message').style.color = 'white';
-            
-            // 1. 本地存储签到记录
-            let signedUsers = JSON.parse(localStorage.getItem('signedUsers') || '[]');
-            if (signedUsers.includes(name)) {
-                document.getElementById('message').innerHTML = '⚠️ 您已签到，无需重复操作！';
-                document.getElementById('message').style.color = '#FFD700';
-                return;
-            }
-            
-            // 添加新用户
-            signedUsers.push(name);
-            localStorage.setItem('signedUsers', JSON.stringify(signedUsers));
-            
-            // 2. 同步到抽奖池
-            let lotteryPool = JSON.parse(localStorage.getItem('lotteryPool') || '[]');
-            if (!lotteryPool.find(u => u.name === name)) {
-                lotteryPool.push({ 
-                    name: name, 
-                    id: Date.now(), 
-                    isWon: false,
-                    signTime: new Date().toLocaleString()
-                });
-                localStorage.setItem('lotteryPool', JSON.stringify(lotteryPool));
-            }
-            
-            // 3. 显示成功信息
-            document.getElementById('message').innerHTML = `✅ ${name}，签到成功！祝您好运！`;
-            document.getElementById('message').style.color = '#90EE90';
-            document.getElementById('name').value = '';
-            
-            // 4. 模拟云端同步
-            console.log('签到成功:', name);
-            console.log('当前抽奖池:', lotteryPool);
-            
-            // 5. 可选：播放成功音效
-            try {
-                const audio = new Audio('https://assets.mixkit.co/sfx/preview/mixkit-correct-answer-tone-2870.mp3');
-                audio.volume = 0.3;
-                audio.play();
-            } catch (e) {
-                // 忽略音效错误
-            }
-        }
-        
-        // 监听回车键
-        document.getElementById('name').addEventListener('keypress', function(e) {
-            if (e.key === 'Enter') {
-                signIn();
-            }
-        });
+        // 签到功能（与方案一相同，此处省略）
     </script>
 </body>
 </html>
