@@ -3,134 +3,252 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>成果展统一签到入口</title>
+    <title>成果展签到 - 参与抽奖</title>
     <style>
-        /* 样式部分保持不变，省略以节省空间 */
-        /* 使用您原来的样式即可 */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Microsoft YaHei', 'Segoe UI', sans-serif;
+            background: linear-gradient(135deg, #6a11cb 0%, #2575fc 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+        
+        .container {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 20px;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.2);
+            padding: 40px;
+            width: 100%;
+            max-width: 500px;
+            text-align: center;
+        }
+        
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 2rem;
+        }
+        
+        .subtitle {
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 1rem;
+        }
+        
+        .qrcode-container {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            border: 2px dashed #ddd;
+            margin: 25px auto;
+            display: inline-block;
+        }
+        
+        #qrcode {
+            width: 220px;
+            height: 220px;
+            margin: 0 auto;
+        }
+        
+        .input-group {
+            margin: 25px 0;
+        }
+        
+        input[type="text"] {
+            width: 100%;
+            padding: 15px;
+            font-size: 16px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            transition: border-color 0.3s;
+        }
+        
+        input[type="text"]:focus {
+            outline: none;
+            border-color: #2575fc;
+        }
+        
+        button {
+            background: linear-gradient(45deg, #FF416C, #FF4B2B);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            font-size: 16px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-weight: bold;
+            width: 100%;
+            margin-top: 10px;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(255, 65, 108, 0.4);
+        }
+        
+        button:active {
+            transform: translateY(0);
+        }
+        
+        #message {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 10px;
+            font-weight: bold;
+            display: none;
+        }
+        
+        .success {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+            display: block !important;
+        }
+        
+        .error {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+            display: block !important;
+        }
+        
+        .info {
+            background-color: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+            display: block !important;
+        }
+        
+        .tip {
+            font-size: 14px;
+            color: #666;
+            margin-top: 25px;
+            line-height: 1.5;
+        }
+        
+        .fallback {
+            margin-top: 20px;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            font-size: 14px;
+        }
+        
+        .fallback code {
+            background: #e9ecef;
+            padding: 2px 6px;
+            border-radius: 4px;
+            word-break: break-all;
+            font-family: monospace;
+        }
     </style>
     
-    <!-- 不在这里引入任何CDN，我们动态加载 -->
+    <!-- 方案1：使用国内BootCDN（最稳定） -->
+    <script src="https://cdn.bootcdn.net/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    
+    <!-- 方案2：备用CDN（如果上面失败） -->
+    <script>
+        // 检测QRCode库是否加载成功
+        function checkQRCodeLoaded() {
+            if (typeof QRCode === 'undefined') {
+                console.warn('BootCDN加载失败，尝试备用CDN...');
+                loadBackupQRCode();
+            }
+        }
+        
+        // 加载备用CDN
+        function loadBackupQRCode() {
+            const script = document.createElement('script');
+            script.src = 'https://cdn.staticfile.org/qrcodejs/1.0.0/qrcode.min.js';
+            script.onload = function() {
+                console.log('备用CDN加载成功');
+                initializeQRCode();
+            };
+            script.onerror = function() {
+                console.error('所有CDN都失败了，使用纯JS生成');
+                usePureJSQRCode();
+            };
+            document.head.appendChild(script);
+        }
+    </script>
 </head>
 <body>
     <div class="container">
-        <!-- 页面内容保持不变 -->
-        <!-- 使用您原来的HTML结构 -->
+        <h1>🎉 成果展抽奖签到 🎉</h1>
+        <p class="subtitle">请扫码签到，即可参与幸运抽奖</p>
         
         <div class="qrcode-container">
-            <div class="qrcode-label">统一签到二维码</div>
-            <div id="qrcode">
-                <!-- 显示加载状态 -->
-                <div id="qrcodeLoading" style="padding: 40px; text-align: center;">
-                    <div style="margin-bottom: 15px;">🔄 正在加载二维码库...</div>
-                    <div class="spinner"></div>
-                    <style>
-                        .spinner {
-                            border: 4px solid #f3f3f3;
-                            border-top: 4px solid #1a2980;
-                            border-radius: 50%;
-                            width: 40px;
-                            height: 40px;
-                            animation: spin 1s linear infinite;
-                            margin: 0 auto;
-                        }
-                        @keyframes spin {
-                            0% { transform: rotate(0deg); }
-                            100% { transform: rotate(360deg); }
-                        }
-                    </style>
-                </div>
-            </div>
+            <div id="qrcode"></div>
         </div>
         
-        <!-- 其他内容保持不变 -->
+        <p style="margin: 15px 0; color: #555;">或直接输入姓名：</p>
+        
+        <div class="input-group">
+            <input type="text" id="name" placeholder="请输入您的真实姓名" autocomplete="off">
+        </div>
+        
+        <button id="signinBtn" onclick="signIn()">
+            ✅ 确认签到
+        </button>
+        
+        <div id="message"></div>
+        
+        <div class="fallback" id="fallback" style="display: none;">
+            <p>📱 <strong>备用访问方式：</strong></p>
+            <p>如果二维码无法扫描，请直接访问：</p>
+            <p><code id="pageUrl"></code></p>
+            <p style="margin-top: 10px;">或输入上方网址到浏览器</p>
+        </div>
+        
+        <div class="tip">
+            <p>✨ 签到成功即进入抽奖池</p>
+            <p>📌 每人仅有一次中奖机会</p>
+            <p>⏰ 抽奖结果将在活动结束后公布</p>
+        </div>
     </div>
     
     <script>
-        // ==================== 二维码生成核心代码 ====================
-        
-        // 多个CDN源，确保至少一个可用
-        const QRCODE_SOURCES = [
-            'https://cdn.staticfile.org/qrcodejs/1.0.0/qrcode.min.js',  // 最稳定的国内CDN
-            'https://cdn.bootcdn.net/ajax/libs/qrcodejs/1.0.0/qrcode.min.js',
-            'https://lf9-cdn-tos.bytecdntp.com/cdn/expire-1-M/qrcodejs/1.0.0/qrcode.min.js', // 字节跳动CDN
-            'https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js',
-            './qrcode.min.js'  // 本地文件（如果有的话）
-        ];
-        
-        // 动态加载二维码库
-        function loadQRCodeLibrary() {
-            console.log('开始加载二维码库...');
+        // 页面加载完成后执行
+        window.onload = function() {
+            console.log('页面加载完成，开始初始化...');
             
-            let loaded = false;
+            // 检查QRCode库是否加载
+            setTimeout(checkQRCodeLoaded, 1000);
             
-            function tryLoad(index) {
-                if (index >= QRCODE_SOURCES.length) {
-                    if (!loaded) {
-                        console.error('所有CDN都加载失败');
-                        usePureJSQRCode();
-                        showFallbackMessage();
-                    }
-                    return;
+            // 显示当前页面URL（备用方案）
+            document.getElementById('pageUrl').textContent = window.location.href;
+            
+            // 初始化二维码（延迟一点确保库加载完成）
+            setTimeout(initializeQRCode, 1500);
+            
+            // 监听回车键
+            document.getElementById('name').addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    signIn();
                 }
-                
-                const source = QRCODE_SOURCES[index];
-                console.log(`尝试加载: ${source}`);
-                
-                const script = document.createElement('script');
-                script.src = source;
-                
-                script.onload = function() {
-                    if (!loaded) {
-                        loaded = true;
-                        console.log(`✅ 成功加载: ${source}`);
-                        
-                        // 移除加载动画
-                        const loadingEl = document.getElementById('qrcodeLoading');
-                        if (loadingEl) loadingEl.remove();
-                        
-                        // 生成二维码
-                        setTimeout(generateQRCode, 100);
-                    }
-                };
-                
-                script.onerror = function() {
-                    console.warn(`❌ 加载失败: ${source}`);
-                    
-                    // 移除失败的script标签
-                    if (script.parentNode) {
-                        script.parentNode.removeChild(script);
-                    }
-                    
-                    // 尝试下一个源
-                    setTimeout(() => tryLoad(index + 1), 300);
-                };
-                
-                document.head.appendChild(script);
-                
-                // 设置超时（5秒）
-                setTimeout(() => {
-                    if (!loaded && script.parentNode) {
-                        script.parentNode.removeChild(script);
-                        tryLoad(index + 1);
-                    }
-                }, 5000);
+            });
+        };
+        
+        // 初始化二维码
+        function initializeQRCode() {
+            const qrcodeElement = document.getElementById('qrcode');
+            
+            if (typeof QRCode === 'undefined') {
+                console.error('QRCode库未加载');
+                showFallback();
+                return;
             }
             
-            // 从第一个源开始尝试
-            tryLoad(0);
-        }
-        
-        // 生成二维码
-        function generateQRCode() {
             try {
-                // 检查库是否加载成功
-                if (typeof QRCode === 'undefined') {
-                    throw new Error('QRCode库未定义');
-                }
-                
-                const qrcodeElement = document.getElementById('qrcode');
-                if (!qrcodeElement) return;
-                
                 // 清空容器
                 qrcodeElement.innerHTML = '';
                 
@@ -138,248 +256,205 @@
                 const currentUrl = window.location.href;
                 console.log('生成二维码，URL:', currentUrl);
                 
-                // 创建二维码
-                new QRCode(qrcodeElement, {
+                // 创建二维码实例
+                const qrcode = new QRCode(qrcodeElement, {
                     text: currentUrl,
                     width: 200,
                     height: 200,
-                    colorDark: "#1a2980",
+                    colorDark: "#000000",
                     colorLight: "#ffffff",
-                    correctLevel: QRCode.CorrectLevel.Q
+                    correctLevel: QRCode.CorrectLevel.H
                 });
                 
-                console.log('✅ 二维码生成成功');
-                
-                // 显示成功提示（可选）
-                setTimeout(() => {
-                    const successMsg = document.createElement('div');
-                    successMsg.style.cssText = `
-                        position: absolute;
-                        top: -25px;
-                        left: 0;
-                        right: 0;
-                        text-align: center;
-                        color: #1a2980;
-                        font-size: 12px;
-                        font-weight: bold;
-                    `;
-                    successMsg.textContent = '✅ 已生成，请扫码';
-                    qrcodeElement.parentNode.style.position = 'relative';
-                    qrcodeElement.parentNode.appendChild(successMsg);
-                    
-                    // 3秒后淡出
-                    setTimeout(() => {
-                        successMsg.style.transition = 'opacity 1s';
-                        successMsg.style.opacity = '0';
-                        setTimeout(() => {
-                            if (successMsg.parentNode) {
-                                successMsg.parentNode.removeChild(successMsg);
-                            }
-                        }, 1000);
-                    }, 3000);
-                }, 500);
+                console.log('二维码生成成功');
+                showMessage('二维码已生成，请使用手机扫码', 'info');
                 
             } catch (error) {
                 console.error('生成二维码失败:', error);
-                usePureJSQRCode();
+                showFallback();
             }
         }
         
-        // 纯JS生成简单二维码（备用方案）
+        // 使用纯JS生成简单二维码（备用的备用）
         function usePureJSQRCode() {
-            console.log('使用纯JS生成二维码');
-            
             const qrcodeElement = document.getElementById('qrcode');
-            if (!qrcodeElement) return;
-            
-            // 移除加载动画
-            const loadingEl = document.getElementById('qrcodeLoading');
-            if (loadingEl) loadingEl.remove();
-            
-            const currentUrl = window.location.href;
+            const url = window.location.href;
             
             // 创建canvas
             const canvas = document.createElement('canvas');
             canvas.width = 200;
             canvas.height = 200;
-            canvas.style.border = '1px solid #ddd';
             const ctx = canvas.getContext('2d');
             
-            // 绘制白色背景
-            ctx.fillStyle = '#ffffff';
+            // 绘制简单二维码样式
+            ctx.fillStyle = 'white';
             ctx.fillRect(0, 0, 200, 200);
             
             // 绘制边框
-            ctx.strokeStyle = '#1a2980';
-            ctx.lineWidth = 3;
-            ctx.strokeRect(5, 5, 190, 190);
+            ctx.strokeStyle = '#333';
+            ctx.lineWidth = 4;
+            ctx.strokeRect(10, 10, 180, 180);
             
-            // 绘制标题
-            ctx.fillStyle = '#1a2980';
-            ctx.font = 'bold 16px "Microsoft YaHei"';
+            // 绘制文字
+            ctx.fillStyle = '#333';
+            ctx.font = 'bold 16px Arial';
             ctx.textAlign = 'center';
-            ctx.fillText('公司签到系统', 100, 50);
+            ctx.fillText('请扫描二维码', 100, 90);
             
-            // 绘制提示
-            ctx.fillStyle = '#666';
-            ctx.font = '14px "Microsoft YaHei"';
-            ctx.fillText('请扫描此二维码', 100, 80);
-            ctx.fillText('或手动输入网址', 100, 100);
+            ctx.font = '12px Arial';
+            ctx.fillText('或访问:', 100, 120);
             
+            ctx.font = '10px Arial';
             // 显示缩短的URL
-            ctx.font = '12px "Microsoft YaHei"';
-            ctx.fillStyle = '#26d0ce';
-            
-            let displayUrl = currentUrl;
+            let displayUrl = url;
             if (displayUrl.length > 30) {
-                // 提取域名部分
-                try {
-                    const urlObj = new URL(displayUrl);
-                    displayUrl = urlObj.hostname + urlObj.pathname.substring(0, 15) + '...';
-                } catch (e) {
-                    displayUrl = displayUrl.substring(0, 27) + '...';
-                }
+                displayUrl = displayUrl.substring(0, 27) + '...';
             }
+            ctx.fillText(displayUrl, 100, 140);
             
-            ctx.fillText(displayUrl, 100, 130);
-            
-            // 绘制手机图标
             ctx.font = 'bold 24px Arial';
-            ctx.fillText('📱', 100, 170);
+            ctx.fillText('📱', 100, 180);
             
             // 添加到页面
             qrcodeElement.innerHTML = '';
             qrcodeElement.appendChild(canvas);
             
-            // 添加提示
-            const tip = document.createElement('div');
-            tip.style.cssText = `
-                margin-top: 10px;
-                color: #666;
-                font-size: 12px;
-                text-align: center;
-            `;
-            tip.textContent = '（备用二维码）';
-            qrcodeElement.appendChild(tip);
+            console.log('纯JS二维码生成完成');
+            showFallback();
         }
         
-        // 显示备用信息
-        function showFallbackMessage() {
-            const fallbackDiv = document.createElement('div');
-            fallbackDiv.style.cssText = `
-                background: #fff3cd;
-                border: 1px solid #ffeaa7;
-                border-radius: 8px;
-                padding: 15px;
-                margin: 20px 0;
-                text-align: center;
-            `;
-            
-            fallbackDiv.innerHTML = `
-                <h3 style="color: #856404; margin-top: 0;">二维码生成失败</h3>
-                <p>请直接访问：</p>
-                <p style="background: #f8f9fa; padding: 10px; border-radius: 5px; word-break: break-all;">
-                    <strong>${window.location.href}</strong>
-                </p>
-                <p style="font-size: 14px; color: #666; margin-top: 10px;">
-                    或将此网址复制到浏览器地址栏
-                </p>
-            `;
-            
-            const container = document.querySelector('.container');
-            if (container) {
-                const qrcodeContainer = document.querySelector('.qrcode-container');
-                if (qrcodeContainer) {
-                    container.insertBefore(fallbackDiv, qrcodeContainer.nextSibling);
-                }
-            }
+        // 显示备用方案
+        function showFallback() {
+            document.getElementById('fallback').style.display = 'block';
+            showMessage('建议直接输入上方网址访问', 'info');
         }
         
-        // ==================== 页面初始化 ====================
-        window.onload = function() {
-            console.log('页面加载完成，初始化签到系统...');
-            
-            // 1. 显示当前页面URL
-            const urlElement = document.getElementById('pageUrl');
-            if (urlElement) {
-                urlElement.textContent = window.location.href;
-            }
-            
-            // 2. 加载二维码库（关键！）
-            setTimeout(loadQRCodeLibrary, 500);
-            
-            // 3. 绑定事件
-            const nameInput = document.getElementById('name');
-            if (nameInput) {
-                nameInput.addEventListener('keypress', function(e) {
-                    if (e.key === 'Enter') signIn();
-                });
-            }
-            
-            // 4. 更新统计数据
-            updateStatistics();
-            
-            // 5. 保存URL供抽奖页面使用
-            saveCheckinUrlForLottery();
-        };
+        // 显示消息
+        function showMessage(text, type) {
+            const messageEl = document.getElementById('message');
+            messageEl.textContent = text;
+            messageEl.className = type;
+        }
         
-        // ==================== 签到功能（保持不变） ====================
-        // ... 您的签到功能代码 ...
-        
+        // 签到功能
         function signIn() {
-            // 原有的签到逻辑保持不变
-            console.log('签到功能');
-            // ...
+            const nameInput = document.getElementById('name');
+            const name = nameInput.value.trim();
+            
+            if (!name) {
+                showMessage('请输入您的姓名', 'error');
+                nameInput.focus();
+                return;
+            }
+            
+            if (name.length < 2 || name.length > 20) {
+                showMessage('姓名长度应在2-20个字之间', 'error');
+                return;
+            }
+            
+            // 显示处理中
+            const signinBtn = document.getElementById('signinBtn');
+            const originalText = signinBtn.textContent;
+            signinBtn.textContent = '处理中...';
+            signinBtn.disabled = true;
+            
+            // 模拟网络请求延迟
+            setTimeout(function() {
+                try {
+                    // 1. 获取现有的签到数据
+                    let signedUsers = JSON.parse(localStorage.getItem('signedUsers') || '[]');
+                    let lotteryPool = JSON.parse(localStorage.getItem('lotteryPool') || '[]');
+                    
+                    // 2. 检查是否已签到
+                    if (signedUsers.includes(name)) {
+                        showMessage(`您已经签到过了，${name}！`, 'info');
+                        signinBtn.textContent = originalText;
+                        signinBtn.disabled = false;
+                        return;
+                    }
+                    
+                    // 3. 添加新用户
+                    signedUsers.push(name);
+                    localStorage.setItem('signedUsers', JSON.stringify(signedUsers));
+                    
+                    // 4. 添加到抽奖池
+                    const user = {
+                        name: name,
+                        id: Date.now(),
+                        isWon: false,
+                        signTime: new Date().toLocaleString('zh-CN'),
+                        ip: '记录IP地址' // 实际中可以记录IP防作弊
+                    };
+                    
+                    lotteryPool.push(user);
+                    localStorage.setItem('lotteryPool', JSON.stringify(lotteryPool));
+                    
+                    // 5. 显示成功消息
+                    showMessage(`✅ ${name}，签到成功！祝您好运！`, 'success');
+                    
+                    // 6. 清空输入框
+                    nameInput.value = '';
+                    
+                    // 7. 播放成功音效（可选）
+                    playSuccessSound();
+                    
+                    // 8. 记录日志
+                    console.log('签到成功:', user);
+                    console.log('当前抽奖池:', lotteryPool);
+                    
+                } catch (error) {
+                    console.error('签到出错:', error);
+                    showMessage('签到失败，请刷新页面重试', 'error');
+                } finally {
+                    // 恢复按钮
+                    setTimeout(function() {
+                        signinBtn.textContent = originalText;
+                        signinBtn.disabled = false;
+                    }, 1500);
+                }
+            }, 800); // 模拟网络延迟
         }
         
-        function updateStatistics() {
-            // 原有的统计逻辑
-            console.log('更新统计');
-            // ...
-        }
-        
-        function saveCheckinUrlForLottery() {
+        // 播放成功音效
+        function playSuccessSound() {
             try {
-                localStorage.setItem('event_checkin_url', window.location.href);
+                // 使用简单的音频提示
+                const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                const oscillator = audioContext.createOscillator();
+                const gainNode = audioContext.createGain();
+                
+                oscillator.connect(gainNode);
+                gainNode.connect(audioContext.destination);
+                
+                oscillator.frequency.value = 800;
+                oscillator.type = 'sine';
+                
+                gainNode.gain.setValueAtTime(0.1, audioContext.currentTime);
+                gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.5);
+                
+                oscillator.start(audioContext.currentTime);
+                oscillator.stop(audioContext.currentTime + 0.5);
+                
             } catch (e) {
-                console.warn('无法保存URL');
+                // 音频播放失败，静默处理
+                console.log('音效播放失败（忽略）');
             }
         }
         
-        // ==================== 二维码测试函数 ====================
-        function testQRCode() {
-            console.log('=== QRCode库测试 ===');
-            console.log('QRCode类型:', typeof QRCode);
-            
-            if (typeof QRCode !== 'undefined') {
-                console.log('✅ QRCode库可用');
-                
-                // 快速测试生成
-                const testDiv = document.createElement('div');
-                testDiv.style.display = 'none';
-                document.body.appendChild(testDiv);
-                
-                try {
-                    new QRCode(testDiv, {
-                        text: 'https://test.example.com',
-                        width: 50,
-                        height: 50
-                    });
-                    console.log('✅ 二维码生成测试通过');
-                    document.body.removeChild(testDiv);
-                    return true;
-                } catch (error) {
-                    console.error('❌ 二维码生成测试失败:', error);
-                    return false;
-                }
-            } else {
-                console.log('❌ QRCode库不可用');
+        // 检测本地存储是否可用
+        function checkLocalStorage() {
+            try {
+                localStorage.setItem('test', 'test');
+                localStorage.removeItem('test');
+                return true;
+            } catch (e) {
+                showMessage('您的浏览器不支持本地存储，请使用现代浏览器', 'error');
                 return false;
             }
         }
         
-        // 在控制台暴露测试函数
-        console.log('调试命令: testQRCode() - 测试二维码功能');
+        // 初始检查
+        checkLocalStorage();
     </script>
 </body>
 </html>
